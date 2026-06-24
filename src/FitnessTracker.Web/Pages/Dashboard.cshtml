@@ -1,0 +1,214 @@
+@page
+@model FitnessTracker.Web.Pages.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_Layout";
+
+    string FormatPace(double secPerKm) => secPerKm <= 0 ? "—" : $"{(int)(secPerKm / 60)}:{(int)(secPerKm % 60):D2}/km";
+    string FormColor(double form) => form >= 0 ? "var(--teal)" : "var(--coral)";
+    string FormGlow(double form) => form >= 0 ? "var(--teal-dim)" : "var(--coral-dim)";
+    string FormHeadline(double form) => form switch
+    {
+        >= 5 => "Fresh and ready to push",
+        >= 0 => "Balanced — holding steady",
+        >= -10 => "Carrying some fatigue",
+        _ => "Significant fatigue — recovery matters now"
+    };
+}
+
+<div class="shell">
+
+    <div class="header">
+        <div>
+            <h1>Training Status</h1>
+            <div class="athlete-tag">Athlete #@Model.AthleteId · Last 90 days</div>
+        </div>
+        <div class="nav-pills">
+            <a class="nav-pill active" href="/Dashboard">Dashboard</a>
+            <a class="nav-pill" href="/swagger">API</a>
+        </div>
+    </div>
+
+    @if (!Model.HasAnyActivities)
+    {
+        <div class="panel">
+            <div class="empty-state">
+                <div class="big">No activities yet</div>
+                <p>Import some <code>.fit</code> files first via <code>/swagger</code> →
+                   <code>POST /api/import/fit-files</code>, then refresh this page.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ── Signature element: the Form readout, styled like a watch's training-status dial ── -->
+        <div class="form-readout">
+            <div class="dial" style="--ring-color: @FormColor(Model.LatestForm); --ring-glow: @FormGlow(Model.LatestForm);">
+                <div class="value">@Model.LatestForm.ToString("+0.0;-0.0;0")</div>
+                <div class="unit">Form</div>
+            </div>
+            <div class="copy">
+                <div class="label">Current Training Status</div>
+                <div class="headline">@FormHeadline(Model.LatestForm)</div>
+                <div class="sub">
+                    Chronic (28-day) load is <strong>@Model.LatestChronic.ToString("0.0")</strong> —
+                    this is your underlying fitness base. Acute (7-day) load is
+                    <strong>@Model.LatestAcute.ToString("0.0")</strong> — your recent training stress.
+                    Form is the gap between them: positive means you're fresher than your fatigue,
+                    negative means recent training is outpacing your recovery.
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Fitness trend chart - the hero ── -->
+        <div class="panel">
+            <div class="panel-title">Fitness Trend — Acute vs Chronic Load</div>
+            <div class="chart-wrap">
+                <canvas id="trendChart" data-trend='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trend.Select(t => new {
+                    date = t.Date.ToString("MMM d"),
+                    acute = Math.Round(t.AcuteLoad, 1),
+                    chronic = Math.Round(t.ChronicLoad, 1)
+                })))'></canvas>
+            </div>
+        </div>
+
+        <!-- ── Per-sport summary cards ── -->
+        <div class="sport-grid">
+            @{
+                var sportMeta = new Dictionary<FitnessTracker.Core.Models.SportType, (string Name, string Color)>
+                {
+                    [FitnessTracker.Core.Models.SportType.Run] = ("Run", "var(--teal)"),
+                    [FitnessTracker.Core.Models.SportType.Bike] = ("Bike", "var(--amber)"),
+                    [FitnessTracker.Core.Models.SportType.Swim] = ("Swim", "#60a5fa"),
+                };
+            }
+            @foreach (var sport in new[] { FitnessTracker.Core.Models.SportType.Run, FitnessTracker.Core.Models.SportType.Bike, FitnessTracker.Core.Models.SportType.Swim })
+            {
+                var meta = sportMeta[sport];
+                if (Model.SportSummaries.TryGetValue(sport, out var summary))
+                {
+                    <div class="sport-card">
+                        <div class="sport-header">
+                            <span class="sport-icon" style="background: @meta.Item2;"></span>
+                            <span class="sport-name">@meta.Item1</span>
+                        </div>
+                        <div class="sport-stat-row"><span class="label">Sessions</span><span class="value">@summary.ActivityCount</span></div>
+                        <div class="sport-stat-row"><span class="label">Distance</span><span class="value">@summary.TotalDistanceKm km</span></div>
+                        <div class="sport-stat-row"><span class="label">Time</span><span class="value">@summary.TotalMovingTimeHours h</span></div>
+                        @if (sport == FitnessTracker.Core.Models.SportType.Bike)
+                        {
+                            <div class="sport-stat-row"><span class="label">Avg speed</span><span class="value">@summary.AvgSpeedKph.ToString("0.0") kph</span></div>
+                        }
+                        else
+                        {
+                            <div class="sport-stat-row"><span class="label">Avg pace</span><span class="value">@FormatPace(summary.AvgPaceSecPerKm)</span></div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="sport-card empty">No @meta.Item1.ToLower() sessions in the last 90 days</div>
+                }
+            }
+        </div>
+
+        <!-- ── Recent activity table ── -->
+        <div class="panel">
+            <div class="panel-title">Recent Activity</div>
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Sport</th>
+                        <th>Distance</th>
+                        <th>Pace / Speed</th>
+                        <th>Avg HR</th>
+                        <th>Load</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var activity in Model.RecentActivities)
+                    {
+                        var meta = sportMeta.TryGetValue(activity.Sport, out var m) ? m : ("Other", "var(--text-dim)");
+                        <tr>
+                            <td>@activity.StartTimeUtc.ToString("d MMM yyyy")</td>
+                            <td><span class="sport-tag"><span class="sport-dot" style="background:@meta.Item2"></span>@meta.Item1</span></td>
+                            <td>@((activity.DistanceMeters / 1000.0).ToString("0.00")) km</td>
+                            <td>@(activity.Sport == FitnessTracker.Core.Models.SportType.Bike ? (activity.AvgSpeedKph?.ToString("0.0") + " kph") : activity.FormattedPace ?? "—")</td>
+                            <td>@(activity.AvgHeartRate?.ToString("0") ?? "—") @(activity.AvgHeartRate.HasValue ? "bpm" : "")</td>
+                            <td>@(activity.TrainingLoad?.ToString("0.0") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @if (Model.HasAnyActivities)
+    {
+        <script>
+            const trendData = JSON.parse(document.getElementById('trendChart').dataset.trend);
+
+            const ctx = document.getElementById('trendChart');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Chronic Load (fitness)',
+                            data: trendData.map(d => d.chronic),
+                            borderColor: '#2dd4bf',
+                            backgroundColor: 'rgba(45, 212, 191, 0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Acute Load (recent stress)',
+                            data: trendData.map(d => d.acute),
+                            borderColor: '#fb7185',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [4, 3],
+                            pointRadius: 0,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#8b98a5', font: { family: 'Inter', size: 12 }, usePointStyle: true, pointStyle: 'line' }
+                        },
+                        tooltip: {
+                            backgroundColor: '#182029',
+                            borderColor: '#2a3441',
+                            borderWidth: 1,
+                            titleColor: '#e8edf2',
+                            bodyColor: '#e8edf2',
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#5a6573', maxTicksLimit: 10, font: { size: 11 } },
+                            grid: { color: '#2a3441', display: false }
+                        },
+                        y: {
+                            ticks: { color: '#5a6573', font: { size: 11 } },
+                            grid: { color: '#1c2530' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}

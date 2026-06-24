@@ -1,0 +1,381 @@
+/* ==========================================================================
+   Fitness Tracker Dashboard
+   Visual identity: a sports-watch "training status" readout, not a generic
+   admin panel. Dark slate base, two accent colors that mean something
+   specific (teal = fresh/recovered, coral = fatigued/loaded) rather than
+   decorative gradients. Oswald (condensed, technical) for big numbers,
+   mirroring the chunky digit displays on a Garmin watch face; Inter for
+   everything that needs to read easily in small sizes.
+   ========================================================================== */
+
+:root {
+    --bg: #11161c;
+    --bg-elevated: #182029;
+    --bg-card: #1c2530;
+    --border: #2a3441;
+    --text: #e8edf2;
+    --text-dim: #8b98a5;
+    --text-faint: #5a6573;
+
+    --teal: #2dd4bf;
+    --teal-dim: #1a3d39;
+    --coral: #fb7185;
+    --coral-dim: #3d2228;
+    --amber: #f5a623;
+
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+}
+
+.shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+}
+
+/* ── Header ── */
+
+.header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.header h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.header .athlete-tag {
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+.nav-pills {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-pill {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.nav-pill:hover, .nav-pill.active {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+/* ── Form readout (signature element) ── */
+
+.form-readout {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.form-readout .dial {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 132px;
+    height: 132px;
+    border-radius: 50%;
+    border: 3px solid var(--ring-color, var(--teal));
+    background: radial-gradient(circle at 50% 40%, var(--ring-glow, var(--teal-dim)) 0%, transparent 75%);
+}
+
+.form-readout .dial .value {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--ring-color, var(--teal));
+}
+
+.form-readout .dial .unit {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 2px;
+}
+
+.form-readout .copy .label {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+}
+
+.form-readout .copy .headline {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-readout .copy .sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+/* ── Stat cards ── */
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.stat-card .stat-label {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+
+.stat-card .stat-value {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.stat-card .stat-value .stat-unit {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+/* ── Panels ── */
+
+.panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+.panel-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 16px 0;
+}
+
+.chart-wrap {
+    position: relative;
+    height: 280px;
+}
+
+/* ── Sport grid ── */
+
+.sport-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.sport-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.sport-card .sport-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.sport-card .sport-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.sport-card .sport-name {
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.sport-card .sport-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.sport-card .sport-stat-row:last-child {
+    border-bottom: none;
+}
+
+.sport-card .sport-stat-row .label {
+    color: var(--text-dim);
+}
+
+.sport-card .sport-stat-row .value {
+    font-weight: 600;
+    font-family: var(--font-display);
+}
+
+.sport-card.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    font-size: 13px;
+    min-height: 140px;
+    text-align: center;
+}
+
+/* ── Activity table ── */
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.activity-table th {
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.activity-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.activity-table tr:last-child td {
+    border-bottom: none;
+}
+
+.sport-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sport-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+/* ── Empty state ── */
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-dim);
+}
+
+.empty-state .big {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.empty-state code {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 12px;
+    color: var(--teal);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 880px) {
+    .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .sport-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-readout {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
