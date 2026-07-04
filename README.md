@@ -5,8 +5,17 @@ A personal training-analysis dashboard built on top of Garmin Connect's exported
 load trend (acute/chronic/form), and estimates sport-specific thresholds
 (run threshold pace, bike FTP, swim CSS) from real test results.
 
+Includes a server-rendered dashboard (ASP.NET Core Razor Pages + Chart.js) showing
+a watch-style "training status" readout, alongside a full REST API (Swagger/OpenAPI)
+for the same data.
+
 No paid API subscriptions required — built around Garmin's free, official FIT SDK
 and your own exported activity files.
+
+> **Screenshot:** add one of `/Dashboard` here once you're happy with a real data set —
+> this is the single highest-value thing you can add to make this repo land well with
+> anyone skimming it (recruiters included). A picture of the actual UI beats any
+> paragraph of description.
 
 ## Why FIT file import instead of a live Strava/Garmin API?
 
@@ -38,11 +47,15 @@ src/
     FitParsing/GarminFitFileParser.cs
     Repositories/
 
-  FitnessTracker.Web/            -- ASP.NET Core Web API
+  FitnessTracker.Web/            -- ASP.NET Core Web API + Razor Pages dashboard
     Controllers/
       ImportController.cs        -- POST /api/import/fit-files
       DashboardController.cs     -- GET  /api/dashboard/...
       ThresholdsController.cs    -- POST /api/thresholds/run|bike|swim
+    Pages/
+      Dashboard.cshtml(.cs)      -- the actual visual dashboard (charts, training status)
+      Shared/_Layout.cshtml
+    wwwroot/css/dashboard.css    -- dark, watch-readout-inspired theme
     Program.cs
 ```
 
@@ -103,4 +116,6 @@ solution is independent of this detail.
 - Weather-history overlay (the `StartLatitude`/`StartLongitude` fields are captured
   per-activity specifically to make this easy to bolt on later via a free tier of
   something like Open-Meteo's historical weather API)
-- No frontend yet — this is the API layer; a Blazor or React dashboard consumes it
+- Threshold trend isn't charted yet on the dashboard (the data and API endpoint
+  already exist via `GET /api/dashboard/threshold-history/{athleteId}/{sport}` —
+  just needs a chart added to the Dashboard page)
