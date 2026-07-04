@@ -27,7 +27,7 @@ public class DashboardController : ControllerBase
     [HttpGet("fitness-trend/{athleteId}")]
     public async Task<IActionResult> GetFitnessTrend(int athleteId, [FromQuery] int days = 90)
     {
-        var to = DateTime.UtcNow.Date;
+        var to = DateTime.UtcNow;
         var from = to.AddDays(-days);
 
         var activities = await _activityRepo.GetByAthleteAsync(athleteId, from: from, to: to);

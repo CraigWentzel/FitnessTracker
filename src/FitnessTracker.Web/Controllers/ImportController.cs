@@ -72,7 +72,10 @@ public class ImportController : ControllerBase
             }
             catch (Exception ex)
             {
-                failed.Add(new { file.FileName, error = ex.Message });
+                var detail = ex.InnerException?.InnerException?.Message
+                             ?? ex.InnerException?.Message
+                             ?? ex.Message;
+                failed.Add(new { file.FileName, error = detail });
             }
         }
 

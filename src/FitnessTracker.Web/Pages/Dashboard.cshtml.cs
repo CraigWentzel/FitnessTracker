@@ -42,7 +42,7 @@ public class DashboardModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var to = DateTime.UtcNow.Date;
+        var to = DateTime.UtcNow;
         var from = to.AddDays(-90);
 
         var allActivities = await _activityRepo.GetByAthleteAsync(AthleteId, from: from, to: to);
