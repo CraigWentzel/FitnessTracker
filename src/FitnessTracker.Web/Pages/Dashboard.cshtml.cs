@@ -1,11 +1,9 @@
-using FitnessTracker.Core.Interfaces;
+﻿using FitnessTracker.Core.Interfaces;
 using FitnessTracker.Core.Models;
 using FitnessTracker.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-
 namespace FitnessTracker.Web.Pages;
-
 /// <summary>
 /// Server-rendered training dashboard. Pulls the same data the API controllers
 /// expose, but renders it directly into the page rather than requiring a
@@ -16,7 +14,6 @@ public class DashboardModel : PageModel
     private readonly IActivityRepository _activityRepo;
     private readonly IThresholdRepository _thresholdRepo;
     private readonly TrainingLoadCalculator _loadCalculator;
-
     public DashboardModel(
         IActivityRepository activityRepo,
         IThresholdRepository thresholdRepo,
@@ -26,36 +23,37 @@ public class DashboardModel : PageModel
         _thresholdRepo = thresholdRepo;
         _loadCalculator = loadCalculator;
     }
-
     [BindProperty(SupportsGet = true)]
     public int AthleteId { get; set; } = 1;
 
-    public bool HasAnyActivities { get; private set; }
+    // NOTE: named PageNumber, not Page - "page" is a reserved Razor Pages
+    // route value used internally by the framework, so a property called
+    // Page silently fails to bind from the query string.
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
 
+    public const int PageSize = 10;
+    public int TotalActivities { get; private set; }
+    public int TotalPages { get; private set; }
+
+    public bool HasAnyActivities { get; private set; }
     public List<FitnessTrendPoint> Trend { get; private set; } = new();
     public double LatestForm { get; private set; }
     public double LatestChronic { get; private set; }
     public double LatestAcute { get; private set; }
-
     public Dictionary<SportType, SportSummary> SportSummaries { get; private set; } = new();
     public List<Activity> RecentActivities { get; private set; } = new();
-
     public async Task OnGetAsync()
     {
         var to = DateTime.UtcNow;
         var from = to.AddDays(-90);
-
         var allActivities = await _activityRepo.GetByAthleteAsync(AthleteId, from: from, to: to);
         HasAnyActivities = allActivities.Count > 0;
-
         if (!HasAnyActivities) return;
-
         var allThresholds = new List<Threshold>();
         foreach (var sport in new[] { SportType.Run, SportType.Bike, SportType.Swim })
             allThresholds.AddRange(await _thresholdRepo.GetHistoryAsync(AthleteId, sport));
-
         Trend = _loadCalculator.CalculateFitnessTrend(allActivities, allThresholds, from, to);
-
         var latest = Trend.LastOrDefault();
         if (latest is not null)
         {
@@ -63,12 +61,10 @@ public class DashboardModel : PageModel
             LatestChronic = latest.ChronicLoad;
             LatestAcute = latest.AcuteLoad;
         }
-
         foreach (var sport in new[] { SportType.Run, SportType.Bike, SportType.Swim })
         {
             var sportActivities = allActivities.Where(a => a.Sport == sport).ToList();
             if (sportActivities.Count == 0) continue;
-
             SportSummaries[sport] = new SportSummary
             {
                 ActivityCount = sportActivities.Count,
@@ -83,9 +79,16 @@ public class DashboardModel : PageModel
             };
         }
 
-        RecentActivities = allActivities.Take(8).ToList();
-    }
+        // ── Pagination for Recent Activity table ──
+        TotalActivities = allActivities.Count;
+        TotalPages = (int)Math.Ceiling(TotalActivities / (double)PageSize);
+        PageNumber = Math.Clamp(PageNumber, 1, Math.Max(TotalPages, 1));
 
+        RecentActivities = allActivities
+            .Skip((PageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+    }
     public class SportSummary
     {
         public int ActivityCount { get; set; }

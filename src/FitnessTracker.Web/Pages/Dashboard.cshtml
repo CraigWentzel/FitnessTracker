@@ -141,6 +141,21 @@
                     }
                 </tbody>
             </table>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pager">
+                    <a class="pager-btn @(Model.PageNumber <= 1 ? "disabled" : "")"
+                       href="@(Model.PageNumber <= 1 ? "#" : $"/Dashboard?athleteId={Model.AthleteId}&pageNumber={Model.PageNumber - 1}")">
+                        ‹ Prev
+                    </a>
+                    <span class="pager-status">Page @Model.PageNumber of @Model.TotalPages (@Model.TotalActivities activities)</span>
+                    <a class="pager-btn @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")"
+                       href="@(Model.PageNumber >= Model.TotalPages ? "#" : $"/Dashboard?athleteId={Model.AthleteId}&pageNumber={Model.PageNumber + 1}")">
+                        Next ›
+                    </a>
+                </div>
+            }
         </div>
     }
 </div>
